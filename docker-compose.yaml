@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:17.2
+    restart: "no"
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${BASEPROJECT_DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${BASEPROJECT_DATABASE_PASSWORD}
+      POSTGRES_DB: ${BASEPROJECT_DATABASE_NAME}
+    healthcheck:
+      test: pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: "no"
+    depends_on:
+      - postgres
+    ports:
+      - "5050:80"        # внешний порт 5050 -> внутренний 80 (интерфейс pgAdmin)
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "admin@admin.com"  # любой логин
+      PGADMIN_DEFAULT_PASSWORD: "root"          # любой пароль
+
+  spring-to-do:
+    image: spring-to-do:latest
+    build:
+      context: .
+      args:
+        DOCKER_BUILDKIT: 1
+    restart: "no"
+    ports:
+      - "8081:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mynewdatabase
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+    depends_on:
+      - postgres
+      - redis
+  redis:
+    image: redis:7.4.2
+    restart: "no"
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+volumes:
+  postgres_data:
+  redis_data:
