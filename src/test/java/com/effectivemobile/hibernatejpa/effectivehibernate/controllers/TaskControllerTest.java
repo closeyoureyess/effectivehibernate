@@ -1,15 +1,15 @@
 package com.effectivemobile.hibernatejpa.effectivehibernate.controllers;
 
-import com.emobile.springtodo.dto.TaskDto;
-import com.emobile.springtodo.services.TaskService;
+import com.effectivemobile.hibernatejpa.effectivehibernate.dto.TaskDto;
+import com.effectivemobile.hibernatejpa.effectivehibernate.services.TaskService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -28,7 +28,7 @@ class TaskControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private TaskService taskService;
 
     @Autowired
@@ -42,7 +42,7 @@ class TaskControllerTest {
         taskDto.setStatus(true);
         taskDto.setDateCalendar(LocalDateTime.now());
 
-        when(taskService.createTasks(any())).thenReturn(taskDto);
+        when(taskService.createTasks(any())).thenReturn(Optional.of(taskDto));
 
         mockMvc.perform(post("/task/create")
                         .contentType(MediaType.APPLICATION_JSON)

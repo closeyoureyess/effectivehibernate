@@ -1,9 +1,6 @@
 package com.effectivemobile.hibernatejpa.effectivehibernate.services;
 
 import com.effectivemobile.hibernatejpa.effectivehibernate.dto.TaskDto;
-import com.effectivemobile.hibernatejpa.effectivehibernate.exceptions.DataCalendarNotBeNullException;
-import com.effectivemobile.hibernatejpa.effectivehibernate.exceptions.EntityNotFoundException;
-import com.effectivemobile.hibernatejpa.effectivehibernate.exceptions.StatusTaskNotBeNullException;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,7 +18,7 @@ public interface TaskService {
      * @param tasksDto DTO объекта задачи, содержащий данные для создания
      * @return Созданный объект-задача в виде {@link TaskDto}
      */
-    TaskDto createTasks(TaskDto tasksDto) throws StatusTaskNotBeNullException, DataCalendarNotBeNullException;
+    Optional<TaskDto> createTasks(TaskDto tasksDto) throws Exception;
 
     /**
      * Метод для редактирования задачи
@@ -29,7 +26,7 @@ public interface TaskService {
      * @param tasksDto DTO объекта задачи с обновленными данными
      * @return {@link Optional} с изменённым объектом-задачей, если задача найдена и успешно обновлена
      */
-    Optional<TaskDto> changeTasks(TaskDto tasksDto) throws EntityNotFoundException;
+    Optional<TaskDto> changeTasks(TaskDto tasksDto) throws Exception;
 
     /**
      * Метод для получения задач по заголовку
@@ -47,6 +44,6 @@ public interface TaskService {
      * @param idTasks ID задачи, которую нужно удалить
      * @return true - если задача найдена и удалена успешно
      */
-    boolean deleteTasks(Long idTasks);
+    boolean deleteTasks(Long idTasks) throws Exception;
 
 }

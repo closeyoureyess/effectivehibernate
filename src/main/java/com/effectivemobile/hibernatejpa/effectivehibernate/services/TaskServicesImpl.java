@@ -6,6 +6,7 @@ import com.effectivemobile.hibernatejpa.effectivehibernate.exceptions.DataCalend
 import com.effectivemobile.hibernatejpa.effectivehibernate.exceptions.EntityNotFoundException;
 import com.effectivemobile.hibernatejpa.effectivehibernate.exceptions.StatusTaskNotBeNullException;
 import com.effectivemobile.hibernatejpa.effectivehibernate.mappers.TaskMapper;
+import com.effectivemobile.hibernatejpa.effectivehibernate.repositories.JdbcRepository;
 import com.effectivemobile.hibernatejpa.effectivehibernate.repositories.TaskRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,17 +28,19 @@ public class TaskServicesImpl implements TaskService {
 
     private final TaskMapper taskMapper;
     private final TaskRepository taskRepository;
+    private final JdbcRepository<Object, Object> jdbcRepository;
 
     @Autowired
-    public TaskServicesImpl(TaskMapper taskMapper, TaskRepository taskRepository) {
+    public TaskServicesImpl(TaskMapper taskMapper, TaskRepository taskRepository, JdbcRepository<Object, Object> jdbcRepository) {
         this.taskMapper = taskMapper;
         this.taskRepository = taskRepository;
+        this.jdbcRepository = jdbcRepository;
     }
 
     @CachePut(cacheNames = "taskServiceCache", key = "#result.id")
     @Transactional
     @Override
-    public TaskDto createTasks(TaskDto tasksDto) throws StatusTaskNotBeNullException, DataCalendarNotBeNullException {
+    public Optional<TaskDto> createTasks(TaskDto tasksDto) throws Exception {
         if (tasksDto.getTitle() == null) {
             throw new StatusTaskNotBeNullException(STATUS_NOT_BE_NULL.getEnumDescription());
         } else if (tasksDto.getDateCalendar() == null) {
@@ -45,26 +48,32 @@ public class TaskServicesImpl implements TaskService {
         }
         Task task = taskMapper.convertDtoToTasks(tasksDto);
         task.setId(null);
-        task = taskRepository.save(task);
+        task = (Task) jdbcRepository.save(task);
         log.info("create");
-        return taskMapper.convertTasksToDto(task);
+        if (task.getId() != null) {
+            TaskDto taskDtoResult = taskMapper.convertTasksToDto(task);
+            return Optional.of(taskDtoResult);
+        }
+        return Optional.empty();
     }
 
     @CachePut(cacheNames = "taskServiceCache", key = "#tasksDto.id")
     @Transactional
     @Override
-    public Optional<TaskDto> changeTasks(TaskDto tasksDto) throws EntityNotFoundException {
-        Task taskFromDB = taskRepository.findById(tasksDto.getId());
-        if (taskFromDB == null) {
+    public Optional<TaskDto> changeTasks(TaskDto tasksDto) throws Exception {
+        Object objectFromDB = jdbcRepository.findById(tasksDto.getId(), Task.class);
+        if (objectFromDB == null) {
             throw new EntityNotFoundException(TASK_NOT_FOUND_BY_ID.getEnumDescription());
         }
+        Task taskFromDB = (Task) objectFromDB;
         taskMapper.compareTaskAndDto(tasksDto, taskFromDB);
-        taskRepository.update(taskFromDB);
-        if (taskFromDB.getId() == null) {
+        Object updatedObject = jdbcRepository.update(taskFromDB);
+        if (updatedObject == null) {
             return Optional.empty();
         }
+        Task updatedTask = (Task) updatedObject;
         log.info("change");
-        return Optional.of(taskMapper.convertTasksToDto(taskFromDB));
+        return Optional.of(taskMapper.convertTasksToDto(updatedTask));
     }
 
     @Cacheable(cacheNames = "taskServiceCache", key = "#result.?[].id")
@@ -90,10 +99,10 @@ public class TaskServicesImpl implements TaskService {
     @CacheEvict(cacheNames = "taskServiceCache", key = "#idTasks")
     @Transactional
     @Override
-    public boolean deleteTasks(Long idTasks) {
-        boolean taskExist = taskRepository.existsById(idTasks);
+    public boolean deleteTasks(Long idTasks) throws Exception {
+        boolean taskExist = jdbcRepository.existsById(idTasks, Task.class);
         if (taskExist) {
-            taskRepository.deleteById(idTasks);
+            jdbcRepository.deleteById(idTasks, Task.class);
             log.info("delete");
             return true;
         }

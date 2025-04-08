@@ -14,7 +14,7 @@ public interface JdbcRepository<T, R> {
      * @param id id сущности
      * @return true, если сущность есть в БД
      */
-    boolean existsById(T id);
+    boolean existsById(T id, R entity) throws Exception;
 
     /**
      * Метод, позволяющий сохранить объект в БД
@@ -22,7 +22,7 @@ public interface JdbcRepository<T, R> {
      * @param entity объект, который нужно сохранить в БД
      * @return сохраненный в БД объект
      */
-    R save(R entity);
+    R save(R entity) throws Exception;
 
     /**
      * Метод, позволяющий обновить объект в БД
@@ -30,7 +30,7 @@ public interface JdbcRepository<T, R> {
      * @param newEntity объект, который нужно обновить в БД
      * @return обновленный в БД объект
      */
-    R update(R newEntity);
+    R update(R newEntity) throws Exception;
 
     /**
      * Метод, позволяющий найти объект в БД по переданному ID
@@ -38,13 +38,13 @@ public interface JdbcRepository<T, R> {
      * @param id сущности
      * @return объект из БД, найденный по ID
      */
-    R findById(T id);
+    R findById(T id, R entity) throws Exception;
 
     /**
      * Метод, позволяющий удалить сущность из БД
      *
      * @param id сущности
      */
-    void deleteById(T id);
+    void deleteById(T id, R entity) throws Exception;
 
 }

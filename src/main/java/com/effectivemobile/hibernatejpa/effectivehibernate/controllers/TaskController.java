@@ -1,9 +1,6 @@
 package com.effectivemobile.hibernatejpa.effectivehibernate.controllers;
 
 import com.effectivemobile.hibernatejpa.effectivehibernate.dto.TaskDto;
-import com.effectivemobile.hibernatejpa.effectivehibernate.exceptions.DataCalendarNotBeNullException;
-import com.effectivemobile.hibernatejpa.effectivehibernate.exceptions.EntityNotFoundException;
-import com.effectivemobile.hibernatejpa.effectivehibernate.exceptions.StatusTaskNotBeNullException;
 import com.effectivemobile.hibernatejpa.effectivehibernate.services.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -61,11 +58,12 @@ public class TaskController {
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Пример тела запроса для создания задачи", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "Создание задачи", value = "\"{\\n  \\\"id\\\": 1,\\n  \\\"title\\\": \\\"Тестовая задача\\\",\\n  \\\"description\\\": \\\"Тестовое описание задачи\\\",\\n  \\\"status\\\": true,\\n  \\\"dateCalendar\\\": \\\"2020-01-01T00:01:10\\\"\\n}\"")))
     @PostMapping(value = "/task/create")
     public ResponseEntity<TaskDto> createTask(@Valid @RequestBody @NotNull(message = "Объект не может быть null")
-                                              TaskDto tasksDto) throws DataCalendarNotBeNullException, StatusTaskNotBeNullException {
+                                                  TaskDto tasksDto) throws Exception {
         log.info("Создание задачи, POST ");
-        TaskDto localTasksDto = taskService.createTasks(tasksDto);
-        if (localTasksDto != null) {
-            return ResponseEntity.ok(localTasksDto);
+        Optional<TaskDto> localTasksDto = taskService.createTasks(tasksDto);
+        if (localTasksDto.isPresent()) {
+            TaskDto taskDto = localTasksDto.get();
+            return ResponseEntity.ok(taskDto);
         }
         return ResponseEntity.badRequest().build();
     }
@@ -112,7 +110,7 @@ public class TaskController {
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Пример тела запроса для редактирования задачи", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "Редактирование задачи", value = "\"{\\n  \\\"id\\\": 1,\\n  \\\"title\\\": \\\"Тестовая задача\\\",\\n  \\\"description\\\": \\\"Тестовое описание задачи\\\",\\n  \\\"status\\\": true,\\n  \\\"dateCalendar\\\": \\\"2020-01-01T00:01:10\\\"\\n}\"")))
     @PutMapping("/task/update-tasks")
     public ResponseEntity<TaskDto> editTasks(@Valid @RequestBody @Parameter(description = "Объект TasksDto с полями, требующими редактирования")
-                                             @NotNull(message = "TasksDto не может быть null") TaskDto tasksDto) throws EntityNotFoundException {
+                                                 @NotNull(message = "TasksDto не может быть null") TaskDto tasksDto) throws Exception {
         Optional<TaskDto> newTasksDto = taskService
                 .changeTasks(tasksDto);
         return newTasksDto.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
@@ -131,7 +129,7 @@ public class TaskController {
     })
     @DeleteMapping(value = "/task/delete/{id}", consumes = MediaType.ALL_VALUE)
     public ResponseEntity<String> deleteTasks(@PathVariable("id") @Parameter(description = "ID задачи") @NotNull(message = "ID задачи не может быть null")
-                                              Long idTasks) {
+                                                  Long idTasks) throws Exception {
         log.info("Удаление задачи по id, метод DELETE" + idTasks);
         boolean result = taskService.deleteTasks(idTasks);
         if (result) {
