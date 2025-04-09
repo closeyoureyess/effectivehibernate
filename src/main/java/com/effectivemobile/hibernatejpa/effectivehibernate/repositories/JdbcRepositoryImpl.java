@@ -1,5 +1,6 @@
 package com.effectivemobile.hibernatejpa.effectivehibernate.repositories;
 
+import com.effectivemobile.hibernatejpa.effectivehibernate.dto.TaskDto;
 import com.effectivemobile.hibernatejpa.effectivehibernate.entities.Task;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -18,11 +19,13 @@ public class JdbcRepositoryImpl implements JdbcRepository<Object, Object> {
     @Override
     public boolean existsById(Object id, Object entity) throws Exception {
         Transaction transaction = null;
-        try (Session session = sessionFactory.openSession()) {
+        Session session = null;
+        try {
+            session = sessionFactory.openSession();
             StringBuilder stringBuilder = new StringBuilder("select count(");
             transaction = session.beginTransaction();
             if (entity instanceof Task) {
-                stringBuilder.append("t.id) Task t where t.id = :id");
+                stringBuilder.append("t.id) from Task t where t.id = :id");
             }
             Long countas = commonExistQuery(stringBuilder, id, session);
             transaction.commit();
@@ -32,6 +35,8 @@ public class JdbcRepositoryImpl implements JdbcRepository<Object, Object> {
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
             throw e;
+        } finally {
+            if (session != null) session.close();
         }
         return false;
     }
@@ -46,13 +51,17 @@ public class JdbcRepositoryImpl implements JdbcRepository<Object, Object> {
     @Override
     public Object save(Object entity) throws Exception {
         Transaction transaction = null;
-        try (Session session = sessionFactory.openSession()) {
+        Session session = null;
+        try {
+            session = sessionFactory.openSession();
             transaction = session.beginTransaction();
             session.persist(entity);
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
             throw e;
+        } finally {
+            if (session != null) session.close();
         }
         return entity;
     }
@@ -60,14 +69,18 @@ public class JdbcRepositoryImpl implements JdbcRepository<Object, Object> {
     @Override
     public Object update(Object newEntity) throws Exception {
         Transaction transaction = null;
+        Session session = null;
         Object updatedEntity;
-        try (Session session = sessionFactory.openSession()) {
+        try {
+            session = sessionFactory.openSession();
             transaction = session.beginTransaction();
             updatedEntity = session.merge(newEntity);
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
             throw e;
+        } finally {
+            if (session != null) session.close();
         }
         return updatedEntity;
     }
@@ -75,14 +88,20 @@ public class JdbcRepositoryImpl implements JdbcRepository<Object, Object> {
     @Override
     public Object findById(Object id, Object entity) throws Exception {
         Transaction transaction = null;
-        Object objectFromDB;
-        try (Session session = sessionFactory.openSession()) {
+        Session session = null;
+        Object objectFromDB = null;
+        try {
+            session = sessionFactory.openSession();
             transaction = session.beginTransaction();
-            objectFromDB = session.get(entity.getClass(), id);
+            if (entity instanceof TaskDto || entity instanceof Task) {
+                objectFromDB = session.get(Task.class, id);
+            }
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
             throw e;
+        } finally {
+            if (session != null) session.close();
         }
         return objectFromDB;
     }
@@ -90,17 +109,21 @@ public class JdbcRepositoryImpl implements JdbcRepository<Object, Object> {
     @Override
     public void deleteById(Object id, Object entity) throws Exception {
         Transaction transaction = null;
+        Session session = null;
         Object objectFromDB;
-        try (Session session = sessionFactory.openSession()) {
+        try {
+            session = sessionFactory.openSession();
             transaction = session.beginTransaction();
             objectFromDB = session.get(entity.getClass(), id);
             if (objectFromDB != null) {
-                session.remove(id);
+                session.remove(objectFromDB);
             }
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
             throw e;
+        } finally {
+            if (session != null) session.close();
         }
     }
 }

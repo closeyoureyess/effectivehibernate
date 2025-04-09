@@ -24,15 +24,17 @@ public class TaskRepositoryImpl implements TaskRepository {
 
     @Override
     public Optional<List<Task>> findAllByTitle(String title, Integer offset, Integer limit) {
-        String sql = "SELECT t.id, t.title, t.description, t.status, t.date_calendar " +
+        String sql = "SELECT t.id, t.title, t.description, t.status, t.dateCalendar " +
                 "from Task t where t.title like :one order by t.id";
         Transaction transaction = null;
+        Session session = null;
 
-        try (Session session = sessionFactory.openSession()) {
+        try {
+            session = sessionFactory.openSession();
             transaction = session.beginTransaction();
             String titleParam = "%" + title + "%";
             List<Task> result = session.createQuery(sql, Task.class)
-                    .setParameter("one", titleParam)  // Используем реальный параметр
+                    .setParameter("one", titleParam)
                     .setFirstResult(offset)
                     .setMaxResults(limit)
                     .list();
@@ -42,10 +44,10 @@ public class TaskRepositoryImpl implements TaskRepository {
             }
             return Optional.of(result);
         } catch (Exception e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
+            if (transaction != null) transaction.rollback();
             throw e;
+        } finally {
+            if (session != null) session.close();
         }
     }
 }

@@ -58,10 +58,9 @@ public class TaskServicesImpl implements TaskService {
     }
 
     @CachePut(cacheNames = "taskServiceCache", key = "#tasksDto.id")
-    @Transactional
     @Override
     public Optional<TaskDto> changeTasks(TaskDto tasksDto) throws Exception {
-        Object objectFromDB = jdbcRepository.findById(tasksDto.getId(), Task.class);
+        Object objectFromDB = jdbcRepository.findById(tasksDto.getId(), tasksDto);
         if (objectFromDB == null) {
             throw new EntityNotFoundException(TASK_NOT_FOUND_BY_ID.getEnumDescription());
         }
@@ -100,9 +99,9 @@ public class TaskServicesImpl implements TaskService {
     @Transactional
     @Override
     public boolean deleteTasks(Long idTasks) throws Exception {
-        boolean taskExist = jdbcRepository.existsById(idTasks, Task.class);
+        boolean taskExist = jdbcRepository.existsById(idTasks, new Task());
         if (taskExist) {
-            jdbcRepository.deleteById(idTasks, Task.class);
+            jdbcRepository.deleteById(idTasks, new Task());
             log.info("delete");
             return true;
         }

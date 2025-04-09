@@ -182,7 +182,8 @@ public class HandlerExceptionController {
      */
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<ApiErrorResponse> handleAllExceptions(Exception e, HttpServletRequest request) {
-        log.error(LOGGER_SYNTAX, GENERATION_ERROR.getEnumDescription(), e.getClass(), e.getMessage(), e);
+        log.error("{}\\n{}\\n{}\\n{}", GENERATION_ERROR.getEnumDescription(), e.getClass(), e.getMessage(),
+                e.getSuppressed(), e);
 
         ApiErrorResponse apiErrorResponse = buildApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
